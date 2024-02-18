@@ -16,11 +16,13 @@ mongo_clusers = None
 mongo_apps = None
 mongo_jobs = None
 
-app = None
+db_custom_resources = None
+mongo_meta_data = None
 
 
 def mongo_init(flask_app):
     global mongo_clusters, mongo_jobs, mongo_apps, mongo_hooks
+    global db_custom_resources, mongo_meta_data
     global app
 
     app = flask_app
@@ -32,5 +34,9 @@ def mongo_init(flask_app):
     mongo_clusters = PyMongo(app, uri=MONGO_ADDR_CLUSTERS).db["clusters"]
     mongo_apps = PyMongo(app, uri=MONGO_ADDR_JOBS).db["apps"]
     mongo_jobs = PyMongo(app, uri=MONGO_ADDR_JOBS).db["jobs"]
+
+    db_custom_resources = PyMongo(app, uri=MONGO_ADDR_CUSTOM_RESOURCES)
+    mongo_meta_data = db_custom_resources.db["meta_data"]
+    mongo_meta_data.create_index("resource_type", unique=True)
 
     app.logger.info("init mongo")
