@@ -8,6 +8,7 @@ from secrets import token_hex
 from blueprints import blueprints
 from bson import json_util
 from ext_requests.mongodb_client import mongo_init
+from ext_requests.mqtt_client import mqtt_init
 from ext_requests.net_plugin_requests import net_register_cluster
 from ext_requests.user_db import create_admin
 from flask import Flask, flash, request
@@ -49,6 +50,7 @@ socketio = SocketIO(
     cors_allowed_origins="*",
 )
 mongo_init(app)
+mqtt_init(app)
 create_admin()
 
 MY_PORT = os.environ.get("MY_PORT") or 10000
