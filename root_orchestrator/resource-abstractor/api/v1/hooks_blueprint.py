@@ -1,0 +1,52 @@
+from enum import Enum
+
+import ext_requests.hooks_db as hooks_db
+from flask import request
+from flask.views import MethodView
+from flask_smorest import Blueprint
+from marshmallow import Schema, fields, validate
+
+hooksblp = Blueprint("Hooks Api", "hooks_api", url_prefix="/api/v1/hooks")
+
+
+class OnHooksEnum(Enum):
+    ON_CREATE = "onCreate"
+    ON_UPDATE = "onUpdate"
+    ON_DELETE = "onDelete"
+
+
+class APIObjectHookSchema(Schema):
+    _id = fields.String()
+    hook_name = fields.String(required=True)
+    webhook_url = fields.String(required=True)
+    entity = fields.String(required=True)
+    on = fields.List(
+        fields.Str(validate=validate.OneOf([e.value for e in OnHooksEnum])), required=True
+    )
+
+
+@hooksblp.route("/")
+class AllHooksController(MethodView):
+    @hooksblp.response(200, APIObjectHookSchema, content_type="application/json")
+    def get(self, *args, **kwargs):
+        return hooks_db.mongo_get_hooks()
+
+    @hooksblp.response(200, APIObjectHookSchema, content_type="application/json")
+    def put(self, *args, **kwargs):
+        data = request.json
+        return hooks_db.mongo_create_hook(data)
+
+
+@hooksblp.route("/<hookId>")
+class SingleHookController(MethodView):
+    @hooksblp.response(200, APIObjectHookSchema, content_type="application/json")
+    def get(self, hookId, *args, **kwargs):
+        hook = hooks_db.mongo_get_hook_by_id(hookId)
+        if not hook:
+            return "Hook not found", 404
+
+        return hook
+
+    @hooksblp.response(204, content_type="application/json")
+    def delete(self, hookId, *args, **kwargs):
+        hooks_db.mongo_delete_hook(hookId)
