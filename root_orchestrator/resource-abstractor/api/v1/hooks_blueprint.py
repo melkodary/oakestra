@@ -1,6 +1,6 @@
 from enum import Enum
 
-import ext_requests.hooks_db as hooks_db
+from db import hooks_db
 from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint
@@ -9,10 +9,14 @@ from marshmallow import Schema, fields, validate
 hooksblp = Blueprint("Hooks Api", "hooks_api", url_prefix="/api/v1/hooks")
 
 
-class OnHooksEnum(Enum):
-    ON_CREATE = "onCreate"
-    ON_UPDATE = "onUpdate"
-    ON_DELETE = "onDelete"
+class HookEventsEnum(Enum):
+    AFTER_CREATE = "afterCreate"
+    BEFORE_CREATE = "beforeCreate"
+
+    AFTER_UPDATE = "afterUpdate"
+    BEFORE_UPDATE = "beforeUpdate"
+
+    AFTER_DELETE = "afterDelete"
 
 
 class APIObjectHookSchema(Schema):
@@ -20,8 +24,8 @@ class APIObjectHookSchema(Schema):
     hook_name = fields.String(required=True)
     webhook_url = fields.String(required=True)
     entity = fields.String(required=True)
-    on = fields.List(
-        fields.Str(validate=validate.OneOf([e.value for e in OnHooksEnum])), required=True
+    events = fields.List(
+        fields.Str(validate=validate.OneOf([e.value for e in HookEventsEnum])), required=True
     )
 
 

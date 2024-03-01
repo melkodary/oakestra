@@ -3,22 +3,29 @@ from datetime import datetime
 import db.mongodb_client as db
 from bson.objectid import ObjectId
 from db.clusters_helper import get_freshness_threshhold
+from managers import hook_manager
 
 
 def create_cluster(data):
-    return db.mongo_clusters.find_one_and_update(
-        {"cluster_name": data["cluster_name"]},
-        {
-            "$set": {
-                "ip": data["cluster_ip"],
-                "clusterinfo": data["cluster_info"],
-                "port": data["manager_port"],
-                "cluster_location": data["cluster_location"],
-            }
-        },
-        upsert=True,
-        return_document=True,
-    )
+    existing_cluster = db.mongo_clusters.find_one({"cluster_name": data["cluster_name"]})
+    if existing_cluster:
+        return db.mongo_clusers.find_one_and_update(
+            {"cluster_name": data["cluster_name"]},
+            {
+                "$set": {
+                    "ip": data["cluster_ip"],
+                    "clusterinfo": data["cluster_info"],
+                    "port": data["manager_port"],
+                    "cluster_location": data["cluster_location"],
+                }
+            },
+            return_document=True,
+        )
+    else:
+        data = hook_manager.beforeObjectCreation(data, "cluster")
+        cluster_res = db.mongo_clusters.insert_one(data)
+
+        return db.mongo_clusters.find_one({"_id": cluster_res.inserted_id})
 
 
 def find_clusters(filter):
