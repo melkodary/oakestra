@@ -1,4 +1,16 @@
+from enum import Enum
+
 from db import mongodb_client as db
+
+
+class HookEventsEnum(Enum):
+    AFTER_CREATE = "afterCreate"
+    BEFORE_CREATE = "beforeCreate"
+
+    AFTER_UPDATE = "afterUpdate"
+    BEFORE_UPDATE = "beforeUpdate"
+
+    AFTER_DELETE = "afterDelete"
 
 
 def mongo_get_hooks(filter={}):

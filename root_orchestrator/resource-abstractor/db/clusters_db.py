@@ -22,7 +22,7 @@ def create_cluster(data):
             return_document=True,
         )
     else:
-        data = hook_manager.beforeObjectCreation(data, "cluster")
+        data = hook_manager.hook_before_creation(data, "cluster")
         cluster_res = db.mongo_clusters.insert_one(data)
 
         return db.mongo_clusters.find_one({"_id": cluster_res.inserted_id})
