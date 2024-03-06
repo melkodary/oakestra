@@ -12,10 +12,24 @@ class HookEventsEnum(Enum):
     BEFORE_UPDATE = "beforeUpdate"
 
     AFTER_DELETE = "afterDelete"
+    BEFORE_DELETE = "beforeDelete"
+
+
+ASYNC_EVENTS = [
+    HookEventsEnum.AFTER_CREATE,
+    HookEventsEnum.AFTER_UPDATE,
+    HookEventsEnum.AFTER_DELETE,
+]
+
+SYNC_EVENTS = [
+    HookEventsEnum.BEFORE_CREATE,
+    HookEventsEnum.BEFORE_UPDATE,
+    HookEventsEnum.BEFORE_DELETE,
+]
 
 
 def find_hooks(filter={}):
-    return db.mongo_hooks.find(filter)
+    return db.mongo_hooks.find(filter) or []
 
 
 def find_hook_by_id(hook_id):
