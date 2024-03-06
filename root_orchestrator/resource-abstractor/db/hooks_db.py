@@ -1,5 +1,6 @@
 from enum import Enum
 
+from bson.objectid import ObjectId
 from db import mongodb_client as db
 
 
@@ -13,22 +14,36 @@ class HookEventsEnum(Enum):
     AFTER_DELETE = "afterDelete"
 
 
-def mongo_get_hooks(filter={}):
+def find_hooks(filter={}):
     return db.mongo_hooks.find(filter)
 
 
-def mongo_get_hook_by_id(hook_id):
-    hooks = mongo_get_hooks({"_id": hook_id})
+def find_hook_by_id(hook_id):
+    hooks = find_hooks({"_id": hook_id})
     return hooks[0] if hooks else None
 
 
-def mongo_create_hook(data):
-    hook_name = data["hook_name"]
-
+def update_hook(hook_id, data):
     return db.mongo_hooks.find_one_and_update(
-        {"hook_name", hook_name}, data, upsert=True, return_document=True
+        {"_id": ObjectId(hook_id)}, {"$set": data}, return_document=True
     )
 
 
-def mongo_delete_hook(hook_id):
+def create_hook(data):
+    res = db.mongo_hooks.insert_one(data)
+
+    return db.mongo_hooks.find_one({"_id": res.inserted_id})
+
+
+def create_update_hook(hook_data):
+    hook_name = hook_data.get("hook_name")
+    hook = db.mongo_hooks.find_one({"hook_name": hook_name})
+
+    if hook:
+        return update_hook(str(hook.get("_id")), hook_data)
+    else:
+        return create_hook(hook_data)
+
+
+def delete_hook(hook_id):
     return db.mongo_hooks.delete_one({"_id": hook_id})

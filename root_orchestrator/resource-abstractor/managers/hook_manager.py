@@ -11,7 +11,7 @@ def before_create_decorator(func):
 
 
 def hook_before_creation(data, type):
-    hooks = hooks_db.mongo_get_hooks(
+    hooks = hooks_db.find_hooks(
         {"entity": type, "events": {"$in": [hooks_db.HookEventsEnum.BEFORE_CREATE]}}
     )
     for hook in hooks:

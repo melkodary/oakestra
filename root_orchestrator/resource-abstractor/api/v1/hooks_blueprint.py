@@ -11,6 +11,7 @@ class APIObjectHookSchema(Schema):
     _id = fields.String()
     hook_name = fields.String(required=True)
     webhook_url = fields.String(required=True)
+    nonsync = fields.Boolean(required=True)
     entity = fields.String(required=True)
     events = fields.List(
         fields.Str(validate=validate.OneOf([e.value for e in hooks_db.HookEventsEnum])),
@@ -22,19 +23,19 @@ class APIObjectHookSchema(Schema):
 class AllHooksController(MethodView):
     @hooksblp.response(200, APIObjectHookSchema, content_type="application/json")
     def get(self, *args, **kwargs):
-        return hooks_db.mongo_get_hooks()
+        return hooks_db.find_hooks()
 
     @hooksblp.response(200, APIObjectHookSchema, content_type="application/json")
     def put(self, *args, **kwargs):
         data = request.json
-        return hooks_db.mongo_create_hook(data)
+        return hooks_db.create_hook(data)
 
 
 @hooksblp.route("/<hookId>")
 class SingleHookController(MethodView):
     @hooksblp.response(200, APIObjectHookSchema, content_type="application/json")
     def get(self, hookId, *args, **kwargs):
-        hook = hooks_db.mongo_get_hook_by_id(hookId)
+        hook = hooks_db.find_hook_by_id(hookId)
         if not hook:
             return "Hook not found", 404
 
@@ -42,4 +43,4 @@ class SingleHookController(MethodView):
 
     @hooksblp.response(204, content_type="application/json")
     def delete(self, hookId, *args, **kwargs):
-        hooks_db.mongo_delete_hook(hookId)
+        hooks_db.delete_hook(hookId)
