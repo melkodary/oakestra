@@ -47,19 +47,7 @@ def create_app(app_data, user_id):
     app_data["userId"] = user_id
     inserted_id = _create_app(app_data)
 
-    return update_app(app_data.get("userId"), str(inserted_id), {"applicationID": str(inserted_id)})
-
-
-def create_update_app(app_data):
-    app_name = app_data.get("app_name")
-    app = db.mongo_apps.find_one({"app_name": app_name})
-
-    if app:
-        return update_app(str(app.get("_id")), app_data)
-    else:
-        return create_app(app_data)
-
-    return app
+    return update_app(str(inserted_id), {"applicationID": str(inserted_id)}, app_data.get("userId"))
 
 
 # Job operations ##############################################################
