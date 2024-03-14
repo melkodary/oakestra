@@ -1,5 +1,5 @@
-from rasclient.client_helper import make_request
 from requests import get, patch, put
+from resource_abstractor_client.client_helper import make_request
 
 RESOURCES_API = "/api/v1/resources"
 
@@ -15,11 +15,6 @@ def get_resource_by_id(resource_id):
 
 def get_resource_by_name(resource_name):
     resources = get_resources(cluster_name=resource_name)
-    return resources[0] if resources else None
-
-
-def get_resource_by_job_id(job_id):
-    resources = get_resources(job_id=job_id)
     return resources[0] if resources else None
 
 

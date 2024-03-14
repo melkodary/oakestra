@@ -1,7 +1,7 @@
 import logging
 
 import requests
-from rasclient import cluster_operations, job_operations
+from resource_abstractor_client import cluster_operations, job_operations
 from services.cluster_management import find_cluster_of_job
 from utils.network import sanitize
 
@@ -9,7 +9,15 @@ from utils.network import sanitize
 def cluster_request_to_deploy(cluster_id, job_id, instance_number):
     print("propagate to cluster...")
     cluster = cluster_operations.get_resource_by_id(cluster_id)
+    if cluster is None:
+        logging.error(f"Cluster with {cluster_id} not found.")
+        return
+
     job = job_operations.get_job_by_id(job_id)
+    if job is None:
+        logging.error(f"Job with {job_id} not found.")
+        return
+
     try:
         cluster_addr = (
             "http://"
@@ -30,6 +38,10 @@ def cluster_request_to_deploy(cluster_id, job_id, instance_number):
 
 def cluster_request_to_delete_job(job_id, instance_number):
     cluster = find_cluster_of_job(job_id, int(instance_number))
+    if cluster is None:
+        logging.error(f"Cluster for job {job_id} not found.")
+        return
+
     try:
         cluster_addr = (
             "http://"
@@ -53,6 +65,10 @@ def cluster_request_to_delete_job(job_id, instance_number):
 def cluster_request_to_delete_job_by_ip(job_id, instance_number, ip):
     try:
         cluster = cluster_operations.get_resource_by_ip(ip)
+        if cluster is None:
+            logging.error(f"Cluster with {ip} not found")
+            return
+
         cluster_addr = (
             "http://"
             + sanitize(cluster.get("ip"), request=True)

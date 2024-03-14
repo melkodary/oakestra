@@ -16,7 +16,7 @@ from flask_jwt_extended import JWTManager
 from flask_smorest import Api
 from flask_socketio import SocketIO, emit
 from flask_swagger_ui import get_swaggerui_blueprint
-from rasclient import cluster_operations
+from resource_abstractor_client import cluster_operations
 from sm_logging import configure_logging
 from utils.network import sanitize
 from werkzeug.utils import redirect, secure_filename
@@ -106,6 +106,10 @@ def handle_init_client(message):
 
     message["cluster_ip"] = cluster_address
     cluster = cluster_operations.create_cluster(message)
+    if cluster is None:
+        app.logger.error("Creating cluster failed")
+        return
+
     cid = str(cluster["_id"])
 
     net_register_cluster(

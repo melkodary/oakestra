@@ -1,5 +1,5 @@
-from rasclient.client_helper import make_request
 from requests import delete, get, patch, post
+from resource_abstractor_client.client_helper import make_request
 
 APPS_API = "/api/v1/applications"
 
@@ -41,6 +41,6 @@ def update_app(app_id, user_id, data):
     return make_request(patch, request_address, json=data)
 
 
-def delete_app(app_id, user_id):
+def delete_app(app_id):
     request_address = f"{APPS_API}/{app_id}"
     return make_request(delete, request_address)
