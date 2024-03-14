@@ -18,6 +18,7 @@ from flask_socketio import SocketIO, emit
 from flask_swagger_ui import get_swaggerui_blueprint
 from rasclient import cluster_operations
 from sm_logging import configure_logging
+from utils.network import sanitize
 from werkzeug.utils import redirect, secure_filename
 
 my_logger = configure_logging()
@@ -101,18 +102,19 @@ def handle_init_client(message):
     )
     app.logger.info(message)
 
-    message["cluster_ip"] = request.remote_addr
+    cluster_address = sanitize(request.remote_addr)
+
+    message["cluster_ip"] = cluster_address
     cluster = cluster_operations.create_cluster(message)
     cid = str(cluster["_id"])
-    x = {"id": cid}
 
     net_register_cluster(
         cluster_id=cid,
-        cluster_address=request.remote_addr,
+        cluster_address=cluster_address,
         cluster_port=message["network_component_port"],
     )
 
-    emit("sc2", json.dumps(x), namespace="/register")
+    emit("sc2", json.dumps({"id": cid}), namespace="/register")
 
 
 @socketio.event(namespace="/register")

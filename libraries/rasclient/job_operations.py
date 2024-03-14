@@ -1,11 +1,15 @@
-from rasclient.client_helper import RESOURCE_ABSTRACTOR_ADDR, make_request
+from rasclient.client_helper import make_request
 from requests import delete, get, patch, put
 
-JOBS_API = f"{RESOURCE_ABSTRACTOR_ADDR}/api/v1/jobs"
+JOBS_API = "/api/v1/jobs"
 
 
 def get_jobs(**kwargs):
     return make_request(get, JOBS_API, params=kwargs) or []
+
+
+def get_jobs_of_application(application_id):
+    return make_request(get, JOBS_API, params={"applicationID": application_id}) or []
 
 
 def get_job_by_id(job_id, filter={}):

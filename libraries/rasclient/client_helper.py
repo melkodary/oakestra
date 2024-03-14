@@ -8,9 +8,11 @@ RESOURCE_ABSTRACTOR_ADDR = (
 )
 
 
-def make_request(method, url, **kwargs):
+def make_request(method, api, **kwargs):
+    url = f"{RESOURCE_ABSTRACTOR_ADDR}{api}"
     try:
         response = method(url, **kwargs)
+        response.raise_for_status()
         return response.json()
     except exceptions.RequestException:
         print(f"Calling {url} not successful.")

@@ -1,68 +1,54 @@
-from bson import json_util
+import json
+
 from db import jobs_db as apps_db
 from flask import request
 from flask.views import MethodView
-from flask_restful import Resource
 from flask_smorest import Blueprint
-from marshmallow import INCLUDE, Schema, fields
+from marshmallow import Schema, fields
 from services import mediator
 
-applicationblp = Blueprint(
-    "Application operations",
+applicationsblp = Blueprint(
+    "Applications operations",
     "applications",
-    url_prefix="/api/application",
-    description="Operations on single application",
+    url_prefix="/api/v1/applications",
+    description="Operations on applications",
 )
 
 
-class ApplicationSchema(Schema):
-    _id = fields.String()
+class ApplicationFilterSchema(Schema):
+    application_name = fields.String()
+    application_namespace = fields.String()
+    userId = fields.String()
 
 
-@applicationblp.route("/")
-class ApplicationsController(Resource):
-    @applicationblp.response(
-        200, ApplicationSchema(unknown=INCLUDE), content_type="application/json"
-    )
-    def get(self, *args, **kwargs):
-        return apps_db.find_all_apps()
+@applicationsblp.route("/")
+class ApplicationsController(MethodView):
+    @applicationsblp.arguments(ApplicationFilterSchema, location="query")
+    def get(self, query={}):
+        return json.dumps(list(apps_db.find_apps(query)), default=str)
 
-
-@applicationblp.route("/<userid>")
-class CreateApplicationController(Resource):
-    @applicationblp.response(
-        200, ApplicationSchema(unknown=INCLUDE), content_type="application/json"
-    )
-    def get(self, userid, *args, **kwargs):
-        return apps_db.find_user_apps(userid)
-
-    @applicationblp.response(
-        200, ApplicationSchema(unknown=INCLUDE), content_type="application/json"
-    )
-    def post(self, userid, *args, **kwargs):
+    def post(self, *args, **kwargs):
         data = request.get_json()
-        return mediator.perform_create(apps_db.create_app, data, userid, entity="application")
-
-
-@applicationblp.route("/<userid>/<appid>")
-class ApplicationController(MethodView):
-    @applicationblp.response(
-        200, ApplicationSchema(unknown=INCLUDE), content_type="application/json"
-    )
-    def get(self, userid, appid, *args, **kwargs):
-        return apps_db.find_user_app(userid, appid)
-
-    @applicationblp.response(200, content_type="application/json")
-    def delete(self, userid, appid, *args, **kwargs):
-        return json_util.dumps(
-            mediator.perform_delete(apps_db.delete_app, appid, userid, entity="application")
+        return json.dumps(
+            mediator.perform_create(apps_db.create_app, data, entity="application"), default=str
         )
 
-    @applicationblp.response(
-        200, ApplicationSchema(unknown=INCLUDE), content_type="application/json"
-    )
-    def patch(self, userid, appid, *args, **kwargs):
+
+@applicationsblp.route("/<appId>")
+class ApplicationController(MethodView):
+    @applicationsblp.arguments(ApplicationFilterSchema, location="query")
+    def get(self, query, **kwargs):
+        app_id = kwargs.get("appId")
+        return json.dumps(apps_db.find_app_by_id(app_id, query), default=str)
+
+    def delete(self, appId, *args, **kwargs):
+        return json.dumps(
+            mediator.perform_delete(apps_db.delete_app(appId), entity="application"), default=str
+        )
+
+    def patch(self, appId, *args, **kwargs):
         data = request.get_json()
-        return mediator.perform_update(
-            apps_db.update_app, appid, data, userid, entity="application"
+        return json.dumps(
+            mediator.perform_update(apps_db.update_app, appId, data, entity="application"),
+            default=str,
         )

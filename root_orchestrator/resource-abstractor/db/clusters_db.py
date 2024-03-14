@@ -2,30 +2,23 @@ from datetime import datetime
 
 import db.mongodb_client as db
 from bson.objectid import ObjectId
-from db.clusters_helper import get_freshness_threshhold
-from managers import hook_manager
+from db.clusters_helper import get_freshness_threshold
 
 
 def create_cluster(data):
-    existing_cluster = db.mongo_clusters.find_one({"cluster_name": data["cluster_name"]})
-    if existing_cluster:
-        return db.mongo_clusers.find_one_and_update(
-            {"cluster_name": data["cluster_name"]},
-            {
-                "$set": {
-                    "ip": data["cluster_ip"],
-                    "clusterinfo": data["cluster_info"],
-                    "port": data["manager_port"],
-                    "cluster_location": data["cluster_location"],
-                }
-            },
-            return_document=True,
-        )
-    else:
-        data = hook_manager.hook_before_creation(data, "cluster")
-        cluster_res = db.mongo_clusters.insert_one(data)
-
-        return db.mongo_clusters.find_one({"_id": cluster_res.inserted_id})
+    return db.mongo_clusters.find_one_and_update(
+        {"cluster_name": data["cluster_name"]},
+        {
+            "$set": {
+                "ip": data["cluster_ip"],
+                "clusterinfo": data["cluster_info"],
+                "port": data["manager_port"],
+                "cluster_location": data["cluster_location"],
+            }
+        },
+        upsert=True,
+        return_document=True,
+    )
 
 
 def find_clusters(filter):
@@ -33,7 +26,7 @@ def find_clusters(filter):
         {"$match": filter},
         {
             "$addFields": {
-                "active": {"$gt": ["$last_modified_timestamp", get_freshness_threshhold()]}
+                "active": {"$gt": ["$last_modified_timestamp", get_freshness_threshold()]}
             }
         },
     ]
@@ -58,7 +51,6 @@ def update_cluster_information(cluster_id, data):
     nodes = data.get("number_of_nodes")
     gpu_cores = data.get("gpu_cores")
     gpu_percent = data.get("gpu_percent")
-    # technology = data.get('technology')
     virtualization = data.get("virtualization")
     more = data.get("more")
     worker_groups = data.get("worker_groups")

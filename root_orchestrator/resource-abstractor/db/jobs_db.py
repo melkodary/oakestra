@@ -4,62 +4,46 @@ import db.mongodb_client as db
 from bson.objectid import ObjectId
 
 
-def find_all_apps(filter={}):
+def find_apps(filter={}):
     return db.mongo_apps.find(filter)
 
 
-def find_app_by_id(app_id, filter={}):
-    filter["_id"] = ObjectId(app_id)
-    app = list(find_all_apps(filter=filter))
+def find_app_by_id(app_id, extra_filter={}):
+    filter = {**extra_filter, "_id": ObjectId(app_id)}
+    app = list(find_apps(filter=filter))
 
     return app[0] if app else None
 
 
-def find_user_apps(user_id, filter={}):
-    return find_all_apps(filter={"userId": user_id})
+def delete_app(app_id):
+    filter = {"_id": ObjectId(app_id)}
+    return db.mongo_apps.find_one_and_delete(filter, return_document=True)
 
 
-def find_user_app(user_id, app_id):
-    return find_app_by_id(app_id, filter={"userId": user_id})
-
-
-def delete_app(app_id, user_id):
-    return db.mongo_apps.find_one_and_delete(
-        {"_id": ObjectId(app_id), "userId": user_id}, return_document=True
-    )
-
-
-def update_app(app_id, data, user_id):
+def update_app(app_id, data):
     return db.mongo_apps.find_one_and_update(
-        {"_id": ObjectId(app_id), "userId": user_id},
+        {"_id": ObjectId(app_id)},
         {"$set": data},
         return_document=True,
     )
 
 
-def _create_app(app_data):
-    res = db.mongo_apps.insert_one(app_data)
+def create_app(app_data):
+    inserted = db.mongo_apps.insert_one(app_data)
 
-    return res.inserted_id
-
-
-def create_app(app_data, user_id):
-    app_data["userId"] = user_id
-    inserted_id = _create_app(app_data)
-
-    return update_app(str(inserted_id), {"applicationID": str(inserted_id)}, app_data.get("userId"))
+    return update_app(str(inserted.inserted_id), {"applicationID": str(inserted.inserted_id)})
 
 
 # Job operations ##############################################################
 
 
-def find_all_jobs(filter={}):
+def find_jobs(filter={}):
     return db.mongo_jobs.find(filter)
 
 
 def find_job_by_id(job_id, filter={}):
     filter["_id"] = ObjectId(job_id)
-    job = list(find_all_jobs(filter=filter))
+    job = list(find_jobs(filter=filter))
 
     return job[0] if job else None
 
@@ -69,6 +53,7 @@ def delete_job(job_id):
 
 
 def update_job(job_id, job_data):
+    job_data.pop("_id", None)
     return db.mongo_jobs.find_one_and_update(
         {"_id": ObjectId(job_id)}, {"$set": job_data}, return_document=True
     )
@@ -110,16 +95,10 @@ def update_job_instance(job_id, instance_number, job_data):
     )
 
 
-def _create_job(job_data):
-    res = db.mongo_jobs.insert_one(job_data)
-
-    return res.inserted_id
-
-
 def create_job(job_data):
-    inserted_id = _create_job(job_data)
+    inserted = db.mongo_jobs.insert_one(job_data)
 
-    return db.mongo_jobs.find_one({"_id": inserted_id})
+    return db.mongo_jobs.find_one({"_id": inserted.inserted_id})
 
 
 def create_update_job(job_data):
@@ -128,7 +107,5 @@ def create_update_job(job_data):
 
     if job:
         return update_job(str(job.get("_id")), job_data)
-    else:
-        return create_job(job_data)
 
-    return job
+    return create_job(job_data)

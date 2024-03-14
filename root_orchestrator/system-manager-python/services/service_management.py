@@ -26,7 +26,11 @@ def insert_job(microservice):
 
     # job insertion
     new_job = job_operations.create_job(job_content)
-    logging.log(logging.INFO, "MONGODB - job {} inserted".format(str(new_job.get("_id"))))
+    if new_job is None:
+        logging.log(logging.ERROR, f"job not inserted - {job_name}")
+        return None
+
+    logging.log(logging.INFO, "job {} inserted".format(str(new_job.get("_id"))))
     return str(new_job.get("_id"))
 
 
@@ -43,8 +47,11 @@ def create_services_of_app(username, sla, force=False):
             return {"message": "invalid service name or namespace"}, 403
         # Insert job into database
         service = generate_db_structure(application, microservice)
-        last_service = insert_job(service)
-        last_service_id = last_service.get("_id")
+        last_service_id = insert_job(service)
+        if last_service_id is None:
+            # TODO: what should be done to previously inserted services?
+            continue
+
         # Insert job into app's services list
         job_operations.update_job(last_service_id, {"microserviceID": last_service_id})
         add_service_to_app(app_id, last_service_id, username)
@@ -58,25 +65,18 @@ def create_services_of_app(username, sla, force=False):
     return {"job_id": str(last_service_id)}, 200
 
 
-# TODO: have logging moved to resource abstractor
 def delete_job(job_id):
-    logging.log(logging.INFO, "MONGODB - delete job...")
+    logging.log(logging.INFO, "delete job...")
     job_operations.delete_job(job_id)
-    logging.log(logging.INFO, "MONGODB - job {} deleted")
-    # return mongo_frontend_jobs.find()
 
 
 def delete_service(username, serviceid):
     apps = app_operations.get_user_apps(username)
     for application in apps:
         if serviceid in application["microservices"]:
-            # undeploy instances
             request_scale_down_instance(serviceid, username)
-            # remove service from app's services list
             remove_service_from_app(application["applicationID"], serviceid, username)
-            # remove service from DB
             delete_job(serviceid)
-            # inform network component
             net_inform_service_undeploy(serviceid)
             return True
     return False
@@ -87,10 +87,12 @@ def update_service(username, sla, serviceid):
     apps = app_operations.get_user_apps(username)
     for application in apps:
         if serviceid in application["microservices"]:
-            # TODO have entity related logging in resource abstractor
-            logging.log(logging.INFO, "MONGODB - update job...")
+            logging.log(logging.INFO, f"update job - {serviceid}...")
             job = job_operations.update_job(serviceid, sla)
-            logging.log(logging.INFO, "MONGODB - job {} updated")
+            if job is None:
+                logging.log(logging.ERROR, "job not updated")
+                continue
+            logging.log(logging.INFO, "job {} updated")
             return job, 200
     return {"message": "service not found"}, 404
 
@@ -100,7 +102,7 @@ def user_services(appid, username):
     if application is None:
         return {"message": "app not found"}, 404
 
-    return job_operations.get_jobs({"applicationID": appid}), 200
+    return job_operations.get_jobs_of_application(appid), 200
 
 
 def get_service(serviceid, username):
@@ -130,6 +132,7 @@ def generate_db_structure(application, microservice):
         microservice["RR_ip"] = addresses.get(
             "rr_ip"
         )  # compatibility with older netmanager versions
+        microservice["RR_ip_v6"] = addresses.get("rr_ip_v6")
     if microservice["virtualization"] == "unikernel":
         microservice["arch"] = microservice["arch"]
     return microservice
