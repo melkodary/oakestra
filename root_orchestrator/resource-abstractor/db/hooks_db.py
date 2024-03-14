@@ -55,8 +55,8 @@ def create_update_hook(hook_data):
 
     if hook:
         return update_hook(str(hook.get("_id")), hook_data)
-    else:
-        return create_hook(hook_data)
+
+    return create_hook(hook_data)
 
 
 def delete_hook(hook_id):
