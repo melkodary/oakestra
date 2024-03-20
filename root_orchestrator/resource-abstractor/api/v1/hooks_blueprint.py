@@ -1,5 +1,4 @@
 from db import hooks_db
-from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from marshmallow import Schema, fields, validate
@@ -27,9 +26,9 @@ class AllHooksController(MethodView):
     def get(self, *args, **kwargs):
         return hooks_db.find_hooks()
 
+    @hooksblp.arguments(APIObjectHookSchema, location="json")
     @hooksblp.response(200, APIObjectHookSchema, content_type="application/json")
-    def put(self, *args, **kwargs):
-        data = request.json
+    def put(self, data, *args, **kwargs):
         return hooks_db.create_hook(data)
 
 

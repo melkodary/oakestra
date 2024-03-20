@@ -30,7 +30,7 @@ class ApplicationsController(MethodView):
     def post(self, *args, **kwargs):
         data = request.get_json()
         return json.dumps(
-            mediator.perform_create(apps_db.create_app, data, entity="application"), default=str
+            mediator.perform_create(apps_db.create_app, data, "application"), default=str
         )
 
 
@@ -42,13 +42,11 @@ class ApplicationController(MethodView):
         return json.dumps(apps_db.find_app_by_id(app_id, query), default=str)
 
     def delete(self, appId, *args, **kwargs):
-        return json.dumps(
-            mediator.perform_delete(apps_db.delete_app(appId), entity="application"), default=str
-        )
+        return json.dumps(mediator.perform_delete(apps_db.delete_app, "application"), default=str)
 
     def patch(self, appId, *args, **kwargs):
         data = request.get_json()
         return json.dumps(
-            mediator.perform_update(apps_db.update_app, appId, data, entity="application"),
+            mediator.perform_update(apps_db.update_app, appId, data, "application"),
             default=str,
         )

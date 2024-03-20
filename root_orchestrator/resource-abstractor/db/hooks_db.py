@@ -16,15 +16,15 @@ class HookEventsEnum(Enum):
 
 
 ASYNC_EVENTS = [
-    HookEventsEnum.AFTER_CREATE,
-    HookEventsEnum.AFTER_UPDATE,
-    HookEventsEnum.AFTER_DELETE,
+    HookEventsEnum.AFTER_CREATE.value,
+    HookEventsEnum.AFTER_UPDATE.value,
+    HookEventsEnum.AFTER_DELETE.value,
 ]
 
 SYNC_EVENTS = [
-    HookEventsEnum.BEFORE_CREATE,
-    HookEventsEnum.BEFORE_UPDATE,
-    HookEventsEnum.BEFORE_DELETE,
+    HookEventsEnum.BEFORE_CREATE.value,
+    HookEventsEnum.BEFORE_UPDATE.value,
+    HookEventsEnum.BEFORE_DELETE.value,
 ]
 
 
