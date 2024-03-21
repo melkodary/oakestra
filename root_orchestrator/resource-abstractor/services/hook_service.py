@@ -5,12 +5,13 @@ import threading
 from db import hooks_db
 from requests import exceptions, post
 
-TIMEOUT = os.environ.get("HOOK_REQUEST_TIMEOUT", 10)
+RESPONSE_TIMEOUT = os.environ.get("HOOK_REQUEST_TIMEOUT", 5)
+CONNECT_TIMEOUT = os.environ.get("HOOK_CONNECT_TIMEOUT", 10)
 
 
 def call_webhook(url, data):
     try:
-        response = post(url, json=data, timeout=TIMEOUT)
+        response = post(url, json=data, timeout=(CONNECT_TIMEOUT, RESPONSE_TIMEOUT))
         response.raise_for_status()
         data = response.json()
     except exceptions.ConnectTimeout:
