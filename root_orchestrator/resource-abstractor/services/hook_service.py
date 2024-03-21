@@ -1,16 +1,24 @@
+import logging
+import os
 import threading
 
 from db import hooks_db
 from requests import exceptions, post
 
+TIMEOUT = os.environ.get("HOOK_REQUEST_TIMEOUT", 10)
 
-def call_webhook(hook, data):
+
+def call_webhook(url, data):
     try:
-        response = post(hook["webhook_url"], json=data)
+        response = post(url, json=data, timeout=TIMEOUT)
         response.raise_for_status()
         data = response.json()
+    except exceptions.ConnectTimeout:
+        logging.warning(f"Request timed out while trying to connect to {url}")
+    except exceptions.ReadTimeout:
+        logging.warning(f"{url} failed to return response in the allotted amount of time")
     except exceptions.RequestException:
-        print(f"Failed to send request to {hook['webhook_url']}")
+        logging.warning(f"Hook failed to send request to {url}")
 
     # if request fails the original data is returned
     return data
@@ -20,12 +28,12 @@ def process_async_hook(entity_id, entity_name, event):
     async_hooks = hooks_db.find_hooks({"entity": entity_name, "async_events": {"$in": [event]}})
 
     for hook in async_hooks:
-        body = {
+        data = {
             "entity": entity_name,
             "entity_id": entity_id,
             "event": event,
         }
-        threading.Thread(target=call_webhook, args=(hook["webhook_url"], body)).start()
+        threading.Thread(target=call_webhook, args=(hook["webhook_url"], data)).start()
 
 
 def after_create(entity_id, entity_name):
