@@ -29,8 +29,9 @@ class ApplicationsController(MethodView):
 
     def post(self, *args, **kwargs):
         data = request.get_json()
+
         return json.dumps(
-            mediator.perform_create(apps_db.create_app, data, "application"), default=str
+            mediator.perform_create("application", apps_db.create_app, data), default=str
         )
 
 
@@ -39,14 +40,18 @@ class ApplicationController(MethodView):
     @applicationsblp.arguments(ApplicationFilterSchema, location="query")
     def get(self, query, **kwargs):
         app_id = kwargs.get("appId")
+
         return json.dumps(apps_db.find_app_by_id(app_id, query), default=str)
 
     def delete(self, appId, *args, **kwargs):
-        return json.dumps(mediator.perform_delete(apps_db.delete_app, "application"), default=str)
+        return json.dumps(
+            mediator.perform_delete("application", apps_db.delete_app, appId), default=str
+        )
 
     def patch(self, appId, *args, **kwargs):
         data = request.get_json()
+
         return json.dumps(
-            mediator.perform_update(apps_db.update_app, appId, data, "application"),
+            mediator.perform_update("application", apps_db.update_app, appId, data),
             default=str,
         )

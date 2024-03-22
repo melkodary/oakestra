@@ -21,6 +21,8 @@ def delete_app(app_id):
 
 
 def update_app(app_id, data):
+    data.pop("_id")
+
     return db.mongo_apps.find_one_and_update(
         {"_id": ObjectId(app_id)},
         {"$set": data},
@@ -35,8 +37,6 @@ def create_app(app_data):
 
 
 # Job operations ##############################################################
-
-
 def find_jobs(filter={}):
     return db.mongo_jobs.find(filter)
 
@@ -48,18 +48,27 @@ def find_job_by_id(job_id, filter={}):
     return job[0] if job else None
 
 
+def find_job_by_name(job_name):
+    jobs = list(find_jobs(filter={"job_name": job_name}))
+
+    return jobs[0] if jobs else None
+
+
 def delete_job(job_id):
     return db.mongo_jobs.find_one_and_delete({"_id": ObjectId(job_id)})
 
 
 def update_job(job_id, job_data):
-    job_data.pop("_id", None)
+    job_data.pop("_id")
+
     return db.mongo_jobs.find_one_and_update(
         {"_id": ObjectId(job_id)}, {"$set": job_data}, return_document=True
     )
 
 
 def update_job_instance(job_id, instance_number, job_data):
+    job_data.pop("_id")
+
     current_time = datetime.now().isoformat()
     cpu_update = {"value": job_data.get("cpu"), "timestamp": current_time}
     memory_update = {"value": job_data.get("memory"), "timestamp": current_time}
@@ -99,13 +108,3 @@ def create_job(job_data):
     inserted = db.mongo_jobs.insert_one(job_data)
 
     return db.mongo_jobs.find_one({"_id": inserted.inserted_id})
-
-
-def create_update_job(job_data):
-    job_name = job_data.get("job_name")
-    job = db.mongo_jobs.find_one({"job_name": job_name})
-
-    if job:
-        return update_job(str(job.get("_id")), job_data)
-
-    return create_job(job_data)

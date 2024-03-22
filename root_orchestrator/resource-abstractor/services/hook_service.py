@@ -25,7 +25,7 @@ def call_webhook(url, data):
     return data
 
 
-def process_async_hook(entity_id, entity_name, event):
+def process_async_hook(entity_name, event, entity_id):
     async_hooks = hooks_db.find_hooks({"entity": entity_name, "async_events": {"$in": [event]}})
 
     for hook in async_hooks:
@@ -37,19 +37,19 @@ def process_async_hook(entity_id, entity_name, event):
         threading.Thread(target=call_webhook, args=(hook["webhook_url"], data)).start()
 
 
-def after_create(entity_id, entity_name):
-    process_async_hook(entity_id, entity_name, hooks_db.HookEventsEnum.AFTER_CREATE.value)
+def after_create(entity_name, entity_id):
+    process_async_hook(entity_name, hooks_db.HookEventsEnum.AFTER_CREATE.value, entity_id)
 
 
-def after_update(entity_id, entity_name):
+def after_update(entity_name, entity_id):
     process_async_hook(entity_id, entity_name, hooks_db.HookEventsEnum.AFTER_UPDATE.value)
 
 
-def after_delete(entity_id, entity_name):
+def after_delete(entity_name, entity_id):
     process_async_hook(entity_id, entity_name, hooks_db.HookEventsEnum.AFTER_DELETE.value)
 
 
-def process_sync_hook(data, entity_name, event):
+def process_sync_hook(entity_name, event, data):
     sync_hooks = hooks_db.find_hooks({"entity": entity_name, "sync_events": {"$in": [event]}})
 
     for hook in sync_hooks:
@@ -58,13 +58,13 @@ def process_sync_hook(data, entity_name, event):
     return data
 
 
-def before_create(data, entity_name):
-    return process_sync_hook(data, entity_name, hooks_db.HookEventsEnum.BEFORE_CREATE.value)
+def before_create(entity_name, data):
+    return process_sync_hook(entity_name, hooks_db.HookEventsEnum.BEFORE_CREATE.value, data)
 
 
-def before_update(data, entity_name):
-    return process_sync_hook(data, entity_name, hooks_db.HookEventsEnum.BEFORE_UPDATE.value)
+def before_update(entity_name, data):
+    return process_sync_hook(entity_name, hooks_db.HookEventsEnum.BEFORE_UPDATE.value, data)
 
 
-def before_delete(data, entity_name):
-    return process_sync_hook(data, entity_name, hooks_db.HookEventsEnum.BEFORE_DELETE.value)
+def before_delete(entity_name, data):
+    return process_sync_hook(entity_name, hooks_db.HookEventsEnum.BEFORE_DELETE.value, data)

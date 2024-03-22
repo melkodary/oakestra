@@ -7,6 +7,7 @@ from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from marshmallow import Schema, fields
+from services import mediator
 from werkzeug import exceptions
 
 jobsblp = Blueprint("Jobs Api", "jobs_api", url_prefix="/api/v1/jobs")
@@ -23,11 +24,20 @@ class AllJobsController(MethodView):
 
     def post(self, *args, **kwargs):
         data = request.json
-        return json.dumps(jobs_db.create_job(data), default=str)
+        return json.dumps(mediator.perform_create("job", jobs_db.create_job, data), default=str)
 
     def put(self, *args, **kwargs):
-        data = request.json
-        return json.dumps(jobs_db.create_update_job(data), default=str)
+        job_data = request.json
+        job_name = job_data.get("job_name")
+        job = jobs_db.find_job_by_name(job_name)
+
+        res = None
+        if job:
+            res = mediator.perform_update("job", jobs_db.update_job, str(job.get("_id")), job_data)
+        else:
+            res = mediator.perform_create("job", jobs_db.create_job, job_data)
+
+        return json.dumps(res, default=str)
 
 
 @jobsblp.route("/<jobId>")
@@ -52,14 +62,18 @@ class JobController(MethodView):
         if ObjectId.is_valid(job_id) is False:
             raise exceptions.BadRequest()
 
-        return json.dumps(jobs_db.update_job(job_id, data), default=str)
+        data["_id"] = job_id
+        return json.dumps(
+            mediator.perform_update("job", jobs_db.update_job, job_id, data),
+            default=str,
+        )
 
     def delete(self, *args, **kwargs):
         job_id = kwargs.get("jobId")
         if ObjectId.is_valid(job_id) is False:
             raise exceptions.BadRequest()
 
-        return json.dumps(jobs_db.delete_job(job_id), default=str)
+        return json.dumps(mediator.perform_delete("job", jobs_db.delete_job, job_id), default=str)
 
 
 @jobsblp.route("/<jobId>/<instanceId>")
@@ -71,4 +85,7 @@ class JobInstanceController(MethodView):
         if ObjectId.is_valid(job_id) is False:
             raise exceptions.BadRequest()
 
-        return json.dumps(jobs_db.update_job_instance(job_id, instance_id, data), default=str)
+        return json.dumps(
+            mediator.perform_update("job", jobs_db.update_job_instance, job_id, instance_id, data),
+            default=str,
+        )
