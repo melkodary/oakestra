@@ -5,6 +5,7 @@ from db.jobs_db import find_job_by_id
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from marshmallow import INCLUDE, Schema, fields
+from services import mediator
 from werkzeug import exceptions
 
 resourcesblp = Blueprint("Resources Info", "resources_info", url_prefix="/api/v1/resources")
@@ -67,9 +68,11 @@ class AllResourcesController(MethodView):
 
         cluster = clusters_db.find_cluster_by_name(resource_name)
         if cluster:
-            return clusters_db.update_cluster(str(cluster["_id"]), data)
+            return mediator.perform_update(
+                "resource", clusters_db.update_cluster, str(cluster["_id"]), data
+            )
 
-        return clusters_db.create_cluster(data)
+        return mediator.perform_create("resource", clusters_db.create_cluster, data)
 
 
 @resourcesblp.route("/<resourceId>")
@@ -93,4 +96,6 @@ class ResourceController(MethodView):
         if ObjectId.is_valid(resource_id) is False:
             raise exceptions.BadRequest()
 
-        return clusters_db.update_cluster_information(resource_id, data)
+        return mediator.perform_update(
+            "resource", clusters_db.update_cluster_information, resource_id, data
+        )
