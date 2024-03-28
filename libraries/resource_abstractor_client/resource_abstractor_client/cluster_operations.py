@@ -5,7 +5,7 @@ RESOURCES_API = "/api/v1/resources"
 
 
 def get_resources(**kwargs):
-    return make_request(get, RESOURCES_API, params=kwargs) or []
+    return make_request(get, RESOURCES_API, params=kwargs)
 
 
 def get_resource_by_id(resource_id):
@@ -28,5 +28,5 @@ def update_cluster_information(cluster_id, data):
     return make_request(patch, request_address, json=data)
 
 
-def upsert_cluster(data):
+def create_cluster(data):
     return make_request(put, RESOURCES_API, json=data)
