@@ -1,11 +1,10 @@
 import json
 
 from db import jobs_db as apps_db
-from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from marshmallow import Schema, fields
-from services import mediator
+from services import hook_service
 
 applicationsblp = Blueprint(
     "Applications operations",
@@ -27,15 +26,15 @@ class ApplicationsController(MethodView):
     def get(self, query={}):
         return json.dumps(list(apps_db.find_apps(query)), default=str)
 
-    def post(self, *args, **kwargs):
-        data = request.get_json()
+    @hook_service.before_create_hook("application")
+    @hook_service.after_create_hook("application")
+    def post(self, data, *args, **kwargs):
+        result = apps_db.create_app(data)
 
-        return json.dumps(
-            mediator.perform_create("application", apps_db.create_app, data), default=str
-        )
+        return json.dumps(result, default=str)
 
 
-@applicationsblp.route("/<appId>")
+@applicationsblp.route("/<app_id>")
 class ApplicationController(MethodView):
     @applicationsblp.arguments(ApplicationFilterSchema, location="query")
     def get(self, query, **kwargs):
@@ -43,15 +42,15 @@ class ApplicationController(MethodView):
 
         return json.dumps(apps_db.find_app_by_id(app_id, query), default=str)
 
-    def delete(self, appId, *args, **kwargs):
-        return json.dumps(
-            mediator.perform_delete("application", apps_db.delete_app, appId), default=str
-        )
+    @hook_service.after_delete_hook("application")
+    def delete(self, app_id, *args, **kwargs):
+        result = apps_db.delete_app(app_id)
 
-    def patch(self, appId, *args, **kwargs):
-        data = request.get_json()
+        return json.dumps(result, default=str)
 
-        return json.dumps(
-            mediator.perform_update("application", apps_db.update_app, appId, data),
-            default=str,
-        )
+    @hook_service.before_update_hook("application")
+    @hook_service.after_update_hook("application")
+    def patch(self, app_id, data, *args, **kwargs):
+        result = apps_db.update_app(app_id, data)
+
+        return json.dumps(result, default=str)
