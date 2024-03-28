@@ -1,16 +1,15 @@
 import json
 
+from api.api_utils import before_after_hook
 from db import jobs_db as apps_db
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from marshmallow import Schema, fields
-from services import hook_service
 
 applicationsblp = Blueprint(
     "Applications operations",
     "applications",
     url_prefix="/api/v1/applications",
-    description="Operations on applications",
 )
 
 
@@ -26,8 +25,7 @@ class ApplicationsController(MethodView):
     def get(self, query={}):
         return json.dumps(list(apps_db.find_apps(query)), default=str)
 
-    @hook_service.before_create_hook("application")
-    @hook_service.after_create_hook("application")
+    @before_after_hook("create", "applications")
     def post(self, data, *args, **kwargs):
         result = apps_db.create_app(data)
 
@@ -37,19 +35,18 @@ class ApplicationsController(MethodView):
 @applicationsblp.route("/<app_id>")
 class ApplicationController(MethodView):
     @applicationsblp.arguments(ApplicationFilterSchema, location="query")
-    def get(self, query, **kwargs):
-        app_id = kwargs.get("appId")
+    def get(self, query, *args, **kwargs):
+        app_id = kwargs.get("app_id")
 
         return json.dumps(apps_db.find_app_by_id(app_id, query), default=str)
 
-    @hook_service.after_delete_hook("application")
+    @before_after_hook("delete", "applications", with_param_id="app_id")
     def delete(self, app_id, *args, **kwargs):
         result = apps_db.delete_app(app_id)
 
         return json.dumps(result, default=str)
 
-    @hook_service.before_update_hook("application")
-    @hook_service.after_update_hook("application")
+    @before_after_hook("update", "applications", with_param_id="app_id")
     def patch(self, app_id, data, *args, **kwargs):
         result = apps_db.update_app(app_id, data)
 

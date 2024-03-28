@@ -1,79 +1,43 @@
 from functools import wraps
 
 from flask import request
-from flask.views import MethodView
 from services import hook_service
 
+event_map = {
+    "create": (hook_service.before_create, hook_service.after_create),
+    "update": (hook_service.before_update, hook_service.after_update),
+    "delete": (None, hook_service.after_delete),
+}
 
-def before_create_hook(entity_name):
+
+# doesn't work well with @arguments decorator
+def before_after_hook(event, entity_name, with_param_id=None):
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
-            data = request.get_json()
-            data = hook_service.before_create(entity_name, data)
+            data = request.json
+
+            before_fn = event_map[event][0]
+            after_fn = event_map[event][1]
+
+            entity_id = kwargs.get(with_param_id) if with_param_id else None
+
+            if before_fn:
+                if entity_id:
+                    data = before_fn(entity_name, entity_id, data)
+                else:
+                    data = before_fn(entity_name, data)
 
             args = list(args)
-            args.append(data)
+            if entity_id:
+                args.append(entity_id)
 
-            return fn(*tuple(args), **kwargs)
+            if data:
+                args.append(data)
 
-        return wrapper
+            result = fn(*tuple(args), **kwargs)
 
-    return decorator
-
-
-def after_create_hook(entity_name):
-    def decorator(fn):
-        @wraps(fn)
-        def wrapper(*args, **kwargs):
-            result = fn(*args, **kwargs)
-            hook_service.after_create(entity_name, result)
-
-            return result
-
-        return wrapper
-
-    return decorator
-
-
-def before_update_hook(entity_name):
-    def decorator(fn):
-        @wraps(fn)
-        def wrapper(app_id, *args, **kwargs):
-            data = request.get_json()
-            data = hook_service.before_update(entity_name, app_id, data)
-
-            args = list(args)
-            args.append(app_id)
-            args.append(data)
-
-            return fn(*tuple(args), **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
-def after_update_hook(entity_name):
-    def decorator(fn):
-        @wraps(fn)
-        def wrapper(*args, **kwargs):
-            result = fn(*args, **kwargs)
-            hook_service.after_update(entity_name, str(result.get("_id")))
-
-            return result
-
-        return wrapper
-
-    return decorator
-
-
-def after_delete_hook(entity_name):
-    def decorator(fn):
-        @wraps(fn)
-        def wrapper(*args, **kwargs):
-            result = fn(*args, **kwargs)
-            hook_service.after_delete(entity_name, str(result.get("_id")))
+            after_fn(entity_name, result["_id"])
 
             return result
 
