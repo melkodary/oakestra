@@ -25,7 +25,7 @@ class ApplicationsController(MethodView):
     def get(self, query={}):
         return json.dumps(list(apps_db.find_apps(query)), default=str)
 
-    @before_after_hook("create", "applications")
+    @before_after_hook("applications")
     def post(self, data, *args, **kwargs):
         result = apps_db.create_app(data)
 
@@ -40,14 +40,16 @@ class ApplicationController(MethodView):
 
         return json.dumps(apps_db.find_app_by_id(app_id, query), default=str)
 
-    @before_after_hook("delete", "applications", with_param_id="app_id")
-    def delete(self, app_id, *args, **kwargs):
+    @before_after_hook("applications", with_param_id="app_id")
+    def delete(self, *args, **kwargs):
+        app_id = kwargs.get("app_id")
         result = apps_db.delete_app(app_id)
 
         return json.dumps(result, default=str)
 
-    @before_after_hook("update", "applications", with_param_id="app_id")
-    def patch(self, app_id, data, *args, **kwargs):
+    @before_after_hook("applications", with_param_id="app_id")
+    def patch(self, data, *args, **kwargs):
+        app_id = kwargs.get("app_id")
         result = apps_db.update_app(app_id, data)
 
         return json.dumps(result, default=str)

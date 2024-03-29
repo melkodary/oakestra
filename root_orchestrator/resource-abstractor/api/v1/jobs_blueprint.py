@@ -1,5 +1,6 @@
 import json
 
+from api.api_utils import before_after_hook
 from bson.objectid import ObjectId
 from db import jobs_db
 from db.jobs_helper import build_filter
@@ -10,7 +11,7 @@ from marshmallow import Schema, fields
 from services import mediator
 from werkzeug import exceptions
 
-jobsblp = Blueprint("Jobs Api", "jobs_api", url_prefix="/api/v1/jobs")
+jobsblp = Blueprint("Jobs Api", "jobs", url_prefix="/api/v1/jobs")
 
 
 class JobFilterSchema(Schema):
@@ -22,9 +23,10 @@ class AllJobsController(MethodView):
     def get(self):
         return json.dumps(list(jobs_db.find_jobs()), default=str)
 
-    def post(self, *args, **kwargs):
-        data = request.json
-        return json.dumps(mediator.perform_create("job", jobs_db.create_job, data), default=str)
+    @before_after_hook("jobs")
+    def post(self, data, *args, **kwargs):
+        result = jobs_db.create_job(data)
+        return json.dumps(result, default=str)
 
     def put(self, *args, **kwargs):
         job_data = request.json
@@ -40,11 +42,11 @@ class AllJobsController(MethodView):
         return json.dumps(res, default=str)
 
 
-@jobsblp.route("/<jobId>")
+@jobsblp.route("/<job_id>")
 class JobController(MethodView):
     @jobsblp.arguments(JobFilterSchema, location="query")
     def get(self, query, **kwargs):
-        job_id = kwargs.get("jobId")
+        job_id = kwargs.get("job_id")
         if ObjectId.is_valid(job_id) is False:
             raise exceptions.BadRequest()
 
@@ -55,37 +57,29 @@ class JobController(MethodView):
 
         return json.dumps(job, default=str)
 
-    def patch(self, *args, **kwargs):
-        data = request.json
-        job_id = kwargs.get("jobId")
+    @before_after_hook("jobs", with_param_id="job_id")
+    def patch(self, data, *args, **kwargs):
+        job_id = kwargs.get("job_id")
+        result = jobs_db.update_job(job_id, data)
 
-        if ObjectId.is_valid(job_id) is False:
-            raise exceptions.BadRequest()
+        return json.dumps(result, default=str)
 
-        data["_id"] = job_id
-        return json.dumps(
-            mediator.perform_update("job", jobs_db.update_job, job_id, data),
-            default=str,
-        )
-
+    @before_after_hook("jobs", with_param_id="job_id")
     def delete(self, *args, **kwargs):
-        job_id = kwargs.get("jobId")
-        if ObjectId.is_valid(job_id) is False:
-            raise exceptions.BadRequest()
+        job_id = kwargs.get("job_id")
+        result = jobs_db.delete_job(job_id)
 
-        return json.dumps(mediator.perform_delete("job", jobs_db.delete_job, job_id), default=str)
+        return json.dumps(result, default=str)
 
 
-@jobsblp.route("/<jobId>/<instanceId>")
+@jobsblp.route("/<job_id>/instance/<instance_id>")
 class JobInstanceController(MethodView):
-    def patch(self, *args, **kwargs):
-        data = request.json
-        job_id = kwargs.get("jobId")
-        instance_id = kwargs.get("instanceId")
-        if ObjectId.is_valid(job_id) is False:
-            raise exceptions.BadRequest()
 
-        return json.dumps(
-            mediator.perform_update("job", jobs_db.update_job_instance, job_id, instance_id, data),
-            default=str,
-        )
+    @before_after_hook("jobs", with_param_id="job_id")
+    def patch(self, data, *args, **kwargs):
+        job_id = kwargs.get("job_id")
+        instance_id = kwargs.get("instance_id")
+
+        result = jobs_db.update_job_instance(job_id, instance_id, data)
+
+        return json.dumps(result, default=str)

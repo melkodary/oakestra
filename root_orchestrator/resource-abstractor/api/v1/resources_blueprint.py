@@ -1,3 +1,4 @@
+from api.api_utils import before_after_hook
 from bson import ObjectId
 from db import clusters_db
 from db.clusters_helper import build_filter
@@ -8,7 +9,7 @@ from marshmallow import INCLUDE, Schema, fields
 from services import mediator
 from werkzeug import exceptions
 
-resourcesblp = Blueprint("Resources Info", "resources_info", url_prefix="/api/v1/resources")
+resourcesblp = Blueprint("Resources Info", "resources", url_prefix="/api/v1/resources")
 
 
 class ResourceSchema(Schema):
@@ -76,14 +77,14 @@ class AllResourcesController(MethodView):
         return mediator.perform_create("resource", clusters_db.create_cluster, data)
 
 
-@resourcesblp.route("/<resourceId>")
+@resourcesblp.route("/<resource_id>")
 class ResourceController(MethodView):
     @resourcesblp.response(200, ResourceSchema, content_type="application/json")
-    def get(self, resourceId):
-        if ObjectId.is_valid(resourceId) is False:
+    def get(self, resource_id):
+        if ObjectId.is_valid(resource_id) is False:
             raise exceptions.BadRequest()
 
-        cluster = clusters_db.find_cluster_by_id(resourceId)
+        cluster = clusters_db.find_cluster_by_id(resource_id)
         if cluster is None:
             raise exceptions.NotFound()
 
@@ -91,12 +92,11 @@ class ResourceController(MethodView):
 
     @resourcesblp.arguments(ResourceSchema(unknown=INCLUDE), location="json")
     @resourcesblp.response(200, ResourceSchema, content_type="application/json")
+    @before_after_hook("resources", with_param_id="resource_id")
     def patch(self, data, **kwargs):
-        resource_id = kwargs.get("resourceId")
+        resource_id = kwargs.get("resource_id")
 
         if ObjectId.is_valid(resource_id) is False:
             raise exceptions.BadRequest()
 
-        return mediator.perform_update(
-            "resource", clusters_db.update_cluster_information, resource_id, data
-        )
+        return clusters_db.update_cluster_information(resource_id, data)

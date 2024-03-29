@@ -62,6 +62,5 @@ def before_create(entity_name, data):
     return process_sync_hook(entity_name, hooks_db.HookEventsEnum.BEFORE_CREATE.value, data)
 
 
-def before_update(entity_name, entity_id, data):
-    data["_id"] = entity_id
+def before_update(entity_name, data):
     return process_sync_hook(entity_name, hooks_db.HookEventsEnum.BEFORE_UPDATE.value, data)
