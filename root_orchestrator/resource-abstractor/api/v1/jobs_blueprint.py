@@ -1,6 +1,5 @@
 import json
 
-from api.api_utils import before_after_hook
 from bson.objectid import ObjectId
 from db import jobs_db
 from db.jobs_helper import build_filter
@@ -8,7 +7,7 @@ from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from marshmallow import Schema, fields
-from services import mediator
+from services.hook_service import before_after_hook, perform_create, perform_update
 from werkzeug import exceptions
 
 jobsblp = Blueprint("Jobs Api", "jobs", url_prefix="/api/v1/jobs")
@@ -35,9 +34,9 @@ class AllJobsController(MethodView):
 
         res = None
         if job:
-            res = mediator.perform_update("job", jobs_db.update_job, str(job.get("_id")), job_data)
+            res = perform_update("job", jobs_db.update_job, str(job.get("_id")), job_data)
         else:
-            res = mediator.perform_create("job", jobs_db.create_job, job_data)
+            res = perform_create("job", jobs_db.create_job, job_data)
 
         return json.dumps(res, default=str)
 

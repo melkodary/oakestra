@@ -1,10 +1,10 @@
 import json
 
-from api.api_utils import before_after_hook
 from db import jobs_db as apps_db
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from marshmallow import Schema, fields
+from services.hook_service import before_after_hook
 
 applicationsblp = Blueprint(
     "Applications operations",

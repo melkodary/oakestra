@@ -1,4 +1,3 @@
-from api.api_utils import before_after_hook
 from bson import ObjectId
 from db import clusters_db
 from db.clusters_helper import build_filter
@@ -6,7 +5,7 @@ from db.jobs_db import find_job_by_id
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from marshmallow import INCLUDE, Schema, fields
-from services import mediator
+from services.hook_service import before_after_hook, perform_create, perform_update
 from werkzeug import exceptions
 
 resourcesblp = Blueprint("Resources Info", "resources", url_prefix="/api/v1/resources")
@@ -70,11 +69,9 @@ class AllResourcesController(MethodView):
 
         cluster = clusters_db.find_cluster_by_name(resource_name)
         if cluster:
-            return mediator.perform_update(
-                "resource", clusters_db.update_cluster, str(cluster["_id"]), data
-            )
+            return perform_update("resource", clusters_db.update_cluster, str(cluster["_id"]), data)
 
-        return mediator.perform_create("resource", clusters_db.create_cluster, data)
+        return perform_create("resource", clusters_db.create_cluster, data)
 
 
 @resourcesblp.route("/<resource_id>")
