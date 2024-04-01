@@ -1,3 +1,4 @@
+import json
 from functools import wraps
 
 from flask import request
@@ -38,10 +39,18 @@ def before_after_hook(entity_name, with_param_id=None):
             args = list(args)
             if data and len(args) > 1:
                 args[1] = data
+            elif data:
+                args.append(data)
 
             result = fn(*tuple(args), **kwargs)
+            result_id = result["_id"] if isinstance(result, dict) else None
 
-            after_fn(entity_name, result["_id"])
+            try:
+                result_id = json.loads(result).get("_id")
+            except json.JSONDecodeError:
+                pass
+
+            after_fn(entity_name, result_id)
 
             return result
 

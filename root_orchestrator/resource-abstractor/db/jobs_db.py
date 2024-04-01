@@ -21,7 +21,7 @@ def delete_app(app_id):
 
 
 def update_app(app_id, data):
-    data.pop("_id")
+    data.pop("_id", None)
 
     return db.mongo_apps.find_one_and_update(
         {"_id": ObjectId(app_id)},
@@ -59,7 +59,7 @@ def delete_job(job_id):
 
 
 def update_job(job_id, job_data):
-    job_data.pop("_id")
+    job_data.pop("_id", None)
 
     return db.mongo_jobs.find_one_and_update(
         {"_id": ObjectId(job_id)}, {"$set": job_data}, return_document=True
@@ -67,7 +67,7 @@ def update_job(job_id, job_data):
 
 
 def update_job_instance(job_id, instance_number, job_data):
-    job_data.pop("_id")
+    job_data.pop("_id", None)
 
     current_time = datetime.now().isoformat()
     cpu_update = {"value": job_data.get("cpu"), "timestamp": current_time}
