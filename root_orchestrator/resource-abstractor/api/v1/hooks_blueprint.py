@@ -11,11 +11,8 @@ class APIObjectHookSchema(Schema):
     hook_name = fields.String(required=True)
     webhook_url = fields.String(required=True)
     entity = fields.String(required=True)
-    async_events = fields.List(
-        fields.Str(validate=validate.OneOf(hooks_db.ASYNC_EVENTS)), default=[]
-    )
-    sync_events = fields.List(
-        fields.Str(validate=validate.OneOf(hooks_db.SYNC_EVENTS)),
+    events = fields.List(
+        fields.Str(validate=validate.OneOf([*hooks_db.ASYNC_EVENTS, *hooks_db.SYNC_EVENTS])),
         default=[],
     )
 

@@ -29,7 +29,7 @@ def call_webhook(url, data):
 
 
 def process_async_hook(entity_name, event, entity_id):
-    async_hooks = hooks_db.find_hooks({"entity": entity_name, "async_events": {"$in": [event]}})
+    async_hooks = hooks_db.find_hooks({"entity": entity_name, "events": {"$in": [event]}})
 
     for hook in async_hooks:
         data = {
@@ -53,10 +53,10 @@ def after_delete(entity_name, entity_id):
 
 
 def process_sync_hook(entity_name, event, data):
-    sync_hooks = hooks_db.find_hooks({"entity": entity_name, "sync_events": {"$in": [event]}})
+    sync_hooks = hooks_db.find_hooks({"entity": entity_name, "events": {"$in": [event]}})
 
     for hook in sync_hooks:
-        data = call_webhook(hook, data)
+        data = call_webhook(hook["webhook_url"], data)
 
     return data
 
