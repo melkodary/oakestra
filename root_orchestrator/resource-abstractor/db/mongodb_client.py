@@ -10,6 +10,7 @@ MONGO_BASE_ADDR = f"mongodb://{MONGO_URL}:{MONGO_PORT}"
 MONGO_ADDR_CLUSTERS = f"{MONGO_BASE_ADDR}/clusters"
 MONGO_ADDR_JOBS = f"{MONGO_BASE_ADDR}/jobs"
 MONGO_ADDR_HOOKS = f"{MONGO_BASE_ADDR}/hooks"
+MONGO_ADDR_CUSTOM_RESOURCES = f"{MONGO_BASE_ADDR}/custom_resources"
 
 mongo_hooks = None
 mongo_clusers = None
